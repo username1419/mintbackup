@@ -1562,18 +1562,6 @@
                     <property name="visible">True</property>
                     <property name="can-focus">True</property>
                     <property name="truncate-multiline">True</property>
-                    <property name="primary-icon-tooltip-markup" translatable="yes">Use '*' to match multiple characters,
-'?' to match a single character,
-'[' and ']' to match a set of characters.
-Use '!' to exclude a set of characters.
-
-Usage examples:
-- '*.png' matches all files ending with '.png'
-- 'image1?.png' matches files like 'image14.png' or 'image1a.png', but not 'image1ab.png'
-- '[abc].jpg' matches files 'a.jpg', 'b.jpg', 'c.jpg'
-- '[a-z].png' matches files 'a.png', 'b.png', 'c.png', ..., 'z.png'
-- '[!cd].png' matches files like 'a.png', '1.png', but not  'c.png' or ' 'd.png''
-- '[abc]*.jpg' matches all files containing any number of characters 'a', 'b', and 'c' and ending with '.jpg', like 'acbabacbb.jpg'</property>
                     <property name="secondary-icon-tooltip-markup" translatable="yes" comments="good luck">Use '*' to match multiple characters,
 '?' to match a single character,
 '[' and ']' to match a set of characters.

@@ -133,6 +133,8 @@ class MintBackup:
         treeview.set_model(self.excludes_model)
 
         wildcard_entry = self.builder.get_object("exclude_wildcard_entry")
+        wildcard_help_icon = self.iconTheme.load_icon("xsi-dialog-question-symbolic", 16, 0)
+        wildcard_entry.set_icon_from_gicon(Gtk.EntryIconPosition.SECONDARY, wildcard_help_icon)
         wildcard_entry.connect("changed", self.try_add_wildcard_to_treeview, treeview, None, True)
         self.builder.get_object("button_wildcard_submit").connect("clicked", self.try_add_wildcard_to_treeview, exclude_treeview, wildcard_entry, False)
         # using window.clear() directly as handler freezes the application
