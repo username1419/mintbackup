@@ -119,7 +119,7 @@ class MintBackup:
 
         # set up exclusion wildcards window
         exclude_treeview = treeview
-        treeview = self.builder.get_object("treeview_excludes")
+        treeview = self.builder.get_object("treeview_wildcard_exclude")
         renderer = Gtk.CellRendererPixbuf()
         column = Gtk.TreeViewColumn("", renderer)
         column.add_attribute(renderer, "pixbuf", 1)
@@ -544,20 +544,16 @@ class MintBackup:
             existing_paths = {row[2] for row in model}
 
             new_items = []
-            for item in directories:
-                if item.startswith('.'):
-                    full_path = os.path.join(home_dir, item)
-                    if full_path not in existing_paths:
-                        if os.path.isdir(full_path):
-                            new_items.append([item, self.dir_icon, full_path])
+            for full_path in directories:
+                if full_path not in existing_paths:
+                    _, item = os.path.split(full_path)
+                    new_items.append([item, self.dir_icon, full_path])
 
-            for item in files:
-                if item.startswith('.'):
-                    full_path = os.path.join(home_dir, item)
-                    if full_path not in existing_paths:
-                        if os.path.isfile(full_path):
-                            new_items.append([item, self.file_icon, full_path])
-            print(new_items)
+            for full_path in files:
+                if full_path not in existing_paths:
+                    _, item = os.path.split(full_path)
+                    new_items.append([item, self.file_icon, full_path])
+
             for item in new_items:
                 model.append(item)
         else:
