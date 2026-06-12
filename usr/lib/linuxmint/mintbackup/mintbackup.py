@@ -137,8 +137,7 @@ class MintBackup:
         wildcard_entry.set_icon_from_gicon(Gtk.EntryIconPosition.SECONDARY, wildcard_help_icon)
         wildcard_entry.connect("changed", self.try_add_wildcard_to_treeview, treeview, None, True)
         self.builder.get_object("button_wildcard_submit").connect("clicked", self.try_add_wildcard_to_treeview, exclude_treeview, wildcard_entry, False)
-        # using window.clear() directly as handler freezes the application
-        self.builder.get_object("button_wildcard_cancel").connect("clicked", lambda _: wildcard_exclude_window.close())
+        self.builder.get_object("button_wildcard_cancel").connect("clicked", lambda _: self.wildcard_window_hide(wildcard_exclude_window, wildcard_entry, treeview))
 
         # set up inclusions page
         treeview = self.builder.get_object("treeview_includes")
@@ -364,7 +363,11 @@ class MintBackup:
             self.excluded_files = []
             for row in self.excludes_model:
                 item = row[2]
-                if os.path.exists(item):
+                if row[0] == "Wildcard":
+                    excluded_dirs, excluded_files = self.get_expanded_paths(item)
+                    self.excluded_dirs.extend(excluded_dirs)
+                    self.excluded_files.extend(excluded_files)
+                elif os.path.exists(item):
                     if os.path.isdir(item):
                         self.excluded_dirs.append(item)
                     else:
@@ -381,7 +384,11 @@ class MintBackup:
             self.included_files = []
             for row in self.includes_model:
                 item = row[2]
-                if os.path.exists(item):
+                if row[0] == "Wildcard":
+                    included_dirs, included_files = self.get_expanded_paths(item)
+                    self.included_dirs.extend(included_dirs)
+                    self.included_files.extend(included_files)
+                elif os.path.exists(item):
                     if os.path.isdir(item):
                         self.included_dirs.append(item)
                     else:
@@ -536,10 +543,8 @@ class MintBackup:
 
     def try_add_wildcard_to_treeview(self, widget, treeview, entry, expanded):
         if expanded:
-            entry = widget.get_text()
-            directories, files = self.get_expanded_paths(entry)
-            print(f"dirs: {directories}")
-            print(f"files: {files}")
+            entry_path = widget.get_text()
+            directories, files = self.get_expanded_paths(entry_path)
 
             # add paths to treeview
             model = treeview.get_model()
@@ -557,17 +562,23 @@ class MintBackup:
             for item in new_items:
                 model.append(item)
         else:
-            entry = entry.get_text()
-            if not self.wildcard_is_valid(entry):
+            entry_path = entry.get_text()
+            if not self.wildcard_is_valid(entry_path):
                 return
 
             model = treeview.get_model()
 
             existing_paths = {row[2] for row in model}
             if entry not in existing_paths:
-                treeview.get_model().append(["Wildcard", self.dir_icon, entry])
+                treeview.get_model().append(["Wildcard", self.dir_icon, entry_path])
 
-            self.builder.get_object("wildcard_filter").close()
+            window = self.builder.get_object("wildcard_filter")
+            self.wildcard_window_hide(window, entry, self.builder.get_object("treeview_wildcard_exclude"))
+
+    def wildcard_window_hide(self, window, entry, treeview):
+        window.hide()
+        entry.set_text("")
+        treeview.get_model().clear()
 
     # FILE BACKUP FUNCTIONS
     #############################################################################################################################
