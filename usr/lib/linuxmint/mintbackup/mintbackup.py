@@ -478,7 +478,7 @@ class MintBackup:
         # validate user input
         if not self.wildcard_is_valid(entry_path):
             # warn the user
-            return
+            return [], []
 
         # match wildcards
         structure = entry_path.split("/")
@@ -503,7 +503,7 @@ class MintBackup:
 
                 # insert file/pattern prefixes
                 # completions = [parent_pattern + entry.name for entry in entries if entry.is_dir() and entry.name in filtered_completions]
-                stored_directories.extend([path + "/" + entry.name for entry in entries if entry.is_dir() and entry.name in filtered])
+                stored_directories.extend([entry.path for entry in entries if entry.is_dir() and entry.name in filtered])
                 stored_files.extend([path + "/" + name for name in filtered if name not in stored_directories])
             scan_directories.clear()
             scan_directories.extend(stored_directories)
@@ -512,7 +512,7 @@ class MintBackup:
 
         # i tried i cant add autocompletion
         # if anyone wants to attempt this, code to generate completions is commented out above
-        return stored_directories, stored_files
+        return scan_directories, stored_files
 
     def wildcard_is_valid(self, path):
         home_dir = self.home_directory
@@ -557,7 +557,7 @@ class MintBackup:
                     if full_path not in existing_paths:
                         if os.path.isfile(full_path):
                             new_items.append([item, self.file_icon, full_path])
-
+            print(new_items)
             for item in new_items:
                 model.append(item)
         else:
