@@ -504,7 +504,7 @@ class MintBackup:
                 # insert file/pattern prefixes
                 # completions = [parent_pattern + entry.name for entry in entries if entry.is_dir() and entry.name in filtered_completions]
                 stored_directories.extend([entry.path for entry in entries if entry.is_dir() and entry.name in filtered])
-                stored_files.extend([path + "/" + name for name in filtered if name not in stored_directories])
+                stored_files.extend([entry.path for entry in entries if entry.is_file() and entry.name in filtered])
             scan_directories.clear()
             scan_directories.extend(stored_directories)
             stored_directories.clear()
@@ -537,6 +537,8 @@ class MintBackup:
         if expanded:
             entry = widget.get_text()
             directories, files = self.get_expanded_paths(entry)
+            print(f"dirs: {directories}")
+            print(f"files: {files}")
 
             # add paths to treeview
             model = treeview.get_model()
@@ -545,15 +547,14 @@ class MintBackup:
 
             new_items = []
             for full_path in directories:
-                if full_path not in existing_paths:
-                    _, item = os.path.split(full_path)
-                    new_items.append([item, self.dir_icon, full_path])
+                _, item = os.path.split(full_path)
+                new_items.append([item, self.dir_icon, full_path])
 
             for full_path in files:
-                if full_path not in existing_paths:
-                    _, item = os.path.split(full_path)
-                    new_items.append([item, self.file_icon, full_path])
+                _, item = os.path.split(full_path)
+                new_items.append([item, self.file_icon, full_path])
 
+            model.clear()
             for item in new_items:
                 model.append(item)
         else:
