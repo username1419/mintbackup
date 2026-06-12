@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+import fnmatch
 import gettext
 import hashlib
 import locale
@@ -108,10 +109,34 @@ class MintBackup:
                     self.excludes_model.append([item[len(self.home_directory) + 1:], self.dir_icon, item])
                 else:
                     self.excludes_model.append([item[len(self.home_directory) + 1:], self.file_icon, item])
+
+        wildcard_exclude_window = self.builder.get_object("wildcard_filter")
         self.builder.get_object("button_add_file").connect("clicked", self.add_item_to_treeview, treeview, self.file_icon, Gtk.FileChooserAction.OPEN, False)
         self.builder.get_object("button_add_folder").connect("clicked", self.add_item_to_treeview, treeview, self.dir_icon, Gtk.FileChooserAction.SELECT_FOLDER, False)
+        self.builder.get_object("button_add_wildcard").connect("clicked", lambda _: wildcard_exclude_window.present())
         self.builder.get_object("button_remove_exclude").connect("clicked", self.remove_item_from_treeview, treeview)
         self.builder.get_object("treeview_excludes_selection").connect("changed", self.on_treeview_excludes_selection_changed)
+
+        # set up exclusion wildcards window
+        exclude_treeview = treeview
+        treeview = self.builder.get_object("treeview_excludes")
+        renderer = Gtk.CellRendererPixbuf()
+        column = Gtk.TreeViewColumn("", renderer)
+        column.add_attribute(renderer, "pixbuf", 1)
+        treeview.append_column(column)
+        renderer = Gtk.CellRendererText()
+        column = Gtk.TreeViewColumn("", renderer)
+        column.add_attribute(renderer, "text", 0)
+        treeview.append_column(column)
+        self.excludes_model = Gtk.ListStore(str, GdkPixbuf.Pixbuf, str)
+        self.excludes_model.set_sort_column_id(0, Gtk.SortType.ASCENDING)
+        treeview.set_model(self.excludes_model)
+
+        wildcard_entry = self.builder.get_object("exclude_wildcard_entry")
+        wildcard_entry.connect("changed", self.try_add_wildcard_to_treeview, treeview, None, True)
+        self.builder.get_object("button_wildcard_submit").connect("clicked", self.try_add_wildcard_to_treeview, exclude_treeview, wildcard_entry, False)
+        # using window.clear() directly as handler freezes the application
+        self.builder.get_object("button_wildcard_cancel").connect("clicked", lambda _: wildcard_exclude_window.close())
 
         # set up inclusions page
         treeview = self.builder.get_object("treeview_includes")
@@ -441,6 +466,112 @@ class MintBackup:
                 self.builder.get_object("button_back").hide()
                 self.builder.get_object("button_forward").hide()
             self.notebook.set_current_page(sel)
+
+    def get_expanded_paths(self, entry_path):
+        home_dir = self.home_directory
+        # remove home
+        if entry_path.startswith("~/"):
+            entry_path = entry_path[2:]
+        elif entry_path.startswith(home_dir):
+            entry_path = entry_path[len(home_dir) + 1:]
+
+        # validate user input
+        if not self.wildcard_is_valid(entry_path):
+            # warn the user
+            return
+
+        # match wildcards
+        structure = entry_path.split("/")
+        scan_directories = [home_dir]
+        stored_directories = []
+        stored_files = []
+        # completions = []
+        depth = 0
+        # this loop builds the *preview* wildcard files upwards, selecting the next entries to scan from the previous iteration
+        while depth < len(structure):
+            stored_files = []
+            parent_pattern = "/".join(structure[:depth])
+            if depth > 0:
+                parent_pattern += "/"
+            pattern = structure[depth]
+            for path in scan_directories:
+                entries = list(os.scandir(path))
+                # matches files in `path` with patterns of the same depth
+                filtered = fnmatch.filter(map(lambda entry: entry.name, entries), pattern)
+                # same as above, but matches all entries which starts with a matching sequence of the pattern
+                # filtered_completions = fnmatch.filter(map(lambda entry: entry.name, entries), pattern + "*")
+
+                # insert file/pattern prefixes
+                # completions = [parent_pattern + entry.name for entry in entries if entry.is_dir() and entry.name in filtered_completions]
+                stored_directories.extend([path + "/" + entry.name for entry in entries if entry.is_dir() and entry.name in filtered])
+                stored_files.extend([path + "/" + name for name in filtered if name not in stored_directories])
+            scan_directories.clear()
+            scan_directories.extend(stored_directories)
+            stored_directories.clear()
+            depth += 1
+
+        # i tried i cant add autocompletion
+        # if anyone wants to attempt this, code to generate completions is commented out above
+        return stored_directories, stored_files
+
+    def wildcard_is_valid(self, path):
+        home_dir = self.home_directory
+        # remove home
+        is_home = False
+        if path.startswith("~/"):
+            path = path[2:]
+            is_home = True
+        elif path.startswith(home_dir):
+            path = path[len(home_dir) + 1:]
+            is_home = True
+
+        # validate user input
+        has_null = "\0" in path
+        is_root = path.startswith("/") and not is_home
+        is_valid = (not has_null) and (not is_root)
+
+        return is_valid
+
+    def try_add_wildcard_to_treeview(self, widget, treeview, entry, expanded):
+        home_dir = self.home_directory
+        if expanded:
+            entry = widget.get_text()
+            directories, files = self.get_expanded_paths(entry)
+
+            # add paths to treeview
+            model = treeview.get_model()
+
+            existing_paths = {row[2] for row in model}
+
+            new_items = []
+            for item in directories:
+                if item.startswith('.'):
+                    full_path = os.path.join(home_dir, item)
+                    if full_path not in existing_paths:
+                        if os.path.isdir(full_path):
+                            new_items.append([item, self.dir_icon, full_path])
+
+            for item in files:
+                if item.startswith('.'):
+                    full_path = os.path.join(home_dir, item)
+                    if full_path not in existing_paths:
+                        if os.path.isfile(full_path):
+                            new_items.append([item, self.file_icon, full_path])
+
+            for item in new_items:
+                model.append(item)
+        else:
+            entry = entry.get_text()
+            if not self.wildcard_is_valid(entry):
+                return
+
+            model = treeview.get_model()
+
+            existing_paths = {row[2] for row in model}
+            if entry not in existing_paths:
+                treeview.get_model().append(["Wildcard", self.dir_icon, entry])
+
+            self.builder.get_object("wildcard_filter").close()
 
     # FILE BACKUP FUNCTIONS
     #############################################################################################################################
