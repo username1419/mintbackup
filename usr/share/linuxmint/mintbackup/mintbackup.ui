@@ -1666,4 +1666,25 @@ Usage examples:
       </object>
     </child>
   </object>
+  <object class="GtkPopover" id="wildcard_warn_nonmatch_popover">
+    <property name="relative-to">button_wildcard_submit</property>
+    <child>
+      <object class="GtkBox" id="vbox9">
+        <property name="visible">True</property>
+        <property name="can-focus">False</property>
+        <property name="orientation">vertical</property>
+        <property name="margin">4</property>
+        <child>
+          <object class="GtkLabel">
+            <property name="label">The entered wildcard does not match any files. Click again to proceed.</property>
+            <property name="visible">True</property>
+          </object>
+          <packing>
+            <property name="expand">True</property>
+            <property name="fill">True</property>
+          </packing>
+        </child>
+      </object>
+    </child>
+  </object>
 </interface>

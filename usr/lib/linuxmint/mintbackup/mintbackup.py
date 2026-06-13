@@ -132,12 +132,13 @@ class MintBackup:
         self.excludes_model.set_sort_column_id(0, Gtk.SortType.ASCENDING)
         treeview.set_model(self.excludes_model)
 
+        wildcard_submit_button = self.builder.get_object("button_wildcard_submit")
         wildcard_entry = self.builder.get_object("exclude_wildcard_entry")
         wildcard_help_icon = self.iconTheme.load_icon("xsi-dialog-question-symbolic", 16, 0)
         wildcard_entry.set_icon_from_gicon(Gtk.EntryIconPosition.SECONDARY, wildcard_help_icon)
-        wildcard_entry.connect("changed", self.try_add_wildcard_to_treeview, treeview, None, True)
-        self.builder.get_object("button_wildcard_submit").connect("clicked", self.try_add_wildcard_to_treeview, exclude_treeview, wildcard_entry, False)
-        self.builder.get_object("button_wildcard_cancel").connect("clicked", lambda _: self.wildcard_window_hide(wildcard_exclude_window, wildcard_entry, treeview))
+        wildcard_entry.connect("changed", self.try_add_wildcard_to_treeview, treeview, None, wildcard_submit_button, True)
+        self.builder.get_object("button_wildcard_submit").connect("clicked", self.try_add_wildcard_to_treeview, exclude_treeview, wildcard_entry, None, False)
+        self.builder.get_object("button_wildcard_cancel").connect("clicked", lambda _: self.wildcard_window_hide(wildcard_exclude_window, wildcard_entry, treeview, wildcard_submit_button))
 
         # set up inclusions page
         treeview = self.builder.get_object("treeview_includes")
@@ -486,8 +487,7 @@ class MintBackup:
 
         # validate user input
         if not self.wildcard_is_valid(entry_path):
-            # warn the user
-            return [], []
+            return None
 
         # match wildcards
         structure = entry_path.split("/")
@@ -541,10 +541,19 @@ class MintBackup:
 
         return is_valid
 
-    def try_add_wildcard_to_treeview(self, widget, treeview, entry, expanded):
+    def try_add_wildcard_to_treeview(self, widget, treeview, entry, submit_button, expanded):
         if expanded:
             entry_path = widget.get_text()
-            directories, files = self.get_expanded_paths(entry_path)
+            paths = self.get_expanded_paths(entry_path)
+            if paths is None:
+                widget.get_style_context().add_class("error")
+                return
+            widget.get_style_context().remove_class("error")
+            directories, files = paths
+
+            is_confirm = submit_button.get_label() == "Confirm?"
+            if is_confirm:
+                submit_button.set_label("Add wildcard")
 
             # add paths to treeview
             model = treeview.get_model()
@@ -563,7 +572,18 @@ class MintBackup:
                 model.append(item)
         else:
             entry_path = entry.get_text()
-            if not self.wildcard_is_valid(entry_path):
+            paths = self.get_expanded_paths(entry_path)
+            if paths is None:
+                widget.get_style_context().add_class("error")
+                return
+            widget.get_style_context().remove_class("error")
+            directories, files = paths
+            
+            is_confirm = widget.get_label() == "Confirm?"
+            if len(directories + files) == 0 and not is_confirm:
+                popover = self.builder.get_object("wildcard_warn_nonmatch_popover")
+                popover.popup()
+                widget.set_label("Confirm?")
                 return
 
             model = treeview.get_model()
@@ -573,12 +593,13 @@ class MintBackup:
                 treeview.get_model().append(["Wildcard", self.dir_icon, entry_path])
 
             window = self.builder.get_object("wildcard_filter")
-            self.wildcard_window_hide(window, entry, self.builder.get_object("treeview_wildcard_exclude"))
+            self.wildcard_window_hide(window, entry, self.builder.get_object("treeview_wildcard_exclude"), widget)
 
-    def wildcard_window_hide(self, window, entry, treeview):
+    def wildcard_window_hide(self, window, entry, treeview, submit_button):
         window.hide()
         entry.set_text("")
         treeview.get_model().clear()
+        submit_button.set_label("Add wildcard")
 
     # FILE BACKUP FUNCTIONS
     #############################################################################################################################
