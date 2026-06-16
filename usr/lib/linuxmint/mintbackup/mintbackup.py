@@ -117,8 +117,7 @@ class MintBackup:
         self.builder.get_object("button_remove_exclude").connect("clicked", self.remove_item_from_treeview, treeview)
         self.builder.get_object("treeview_excludes_selection").connect("changed", self.on_treeview_excludes_selection_changed)
 
-        # set up exclude wildcards window
-        exclude_treeview = treeview
+        # set up wildcards window
         treeview = self.builder.get_object("treeview_wildcard")
         renderer = Gtk.CellRendererPixbuf()
         column = Gtk.TreeViewColumn("", renderer)
@@ -128,16 +127,16 @@ class MintBackup:
         column = Gtk.TreeViewColumn("", renderer)
         column.add_attribute(renderer, "text", 0)
         treeview.append_column(column)
-        self.excludes_model = Gtk.ListStore(str, GdkPixbuf.Pixbuf, str)
-        self.excludes_model.set_sort_column_id(0, Gtk.SortType.ASCENDING)
-        treeview.set_model(self.excludes_model)
+        excludes_model = Gtk.ListStore(str, GdkPixbuf.Pixbuf, str)
+        excludes_model.set_sort_column_id(0, Gtk.SortType.ASCENDING)
+        treeview.set_model(excludes_model)
 
         wildcard_submit_button = self.builder.get_object("button_wildcard_submit")
         wildcard_entry = self.builder.get_object("wildcard_entry")
         wildcard_help_icon = self.iconTheme.load_icon("xsi-dialog-question-symbolic", 16, 0)
         wildcard_entry.set_icon_from_gicon(Gtk.EntryIconPosition.SECONDARY, wildcard_help_icon)
         wildcard_entry.connect("changed", self.try_add_wildcard_to_treeview, treeview, None, wildcard_submit_button, True)
-        self.builder.get_object("button_wildcard_submit").connect("clicked", self.try_add_wildcard_to_treeview, exclude_treeview, wildcard_entry, None, False)
+        self.builder.get_object("button_wildcard_submit").connect("clicked", self.try_add_wildcard_to_treeview, None, wildcard_entry, None, False)
         self.builder.get_object("button_wildcard_cancel").connect("clicked", lambda _: self.wildcard_window_hide(wildcard_window, wildcard_entry, treeview, wildcard_submit_button))
 
         # set up inclusions page
