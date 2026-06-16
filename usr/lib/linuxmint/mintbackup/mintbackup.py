@@ -365,7 +365,7 @@ class MintBackup:
             self.excluded_files = []
             for row in self.excludes_model:
                 item = row[2]
-                if row[0].startswith("Wildcard"):
+                if row[0].startswith(_("Wildcard")):
                     excluded_dirs, excluded_files = self.get_expanded_paths(item)
                     self.excluded_dirs.extend(excluded_dirs)
                     self.excluded_files.extend(excluded_files)
@@ -552,20 +552,20 @@ class MintBackup:
             widget.get_style_context().remove_class("error")
             directories, files = paths
 
-            is_confirm = submit_button.get_label() == "Confirm?"
+            is_confirm = submit_button.get_label() == _("Confirm?")
             if is_confirm:
-                submit_button.set_label("Use wildcard")
+                submit_button.set_label(_("Use wildcard"))
 
             # add paths to treeview
             model = treeview.get_model()
 
             new_items = []
             for full_path in directories:
-                _, item = os.path.split(full_path)
+                _unused, item = os.path.split(full_path)
                 new_items.append([item, self.dir_icon, full_path])
 
             for full_path in files:
-                _, item = os.path.split(full_path)
+                _unused, item = os.path.split(full_path)
                 new_items.append([item, self.file_icon, full_path])
 
             model.clear()
@@ -580,11 +580,11 @@ class MintBackup:
             widget.get_style_context().remove_class("error")
             directories, files = paths
             
-            is_confirm = widget.get_label() == "Confirm?"
+            is_confirm = widget.get_label() == _("Confirm?")
             if len(directories + files) == 0 and not is_confirm:
                 popover = self.builder.get_object("wildcard_warn_nonmatch_popover")
                 popover.popup()
-                widget.set_label("Confirm?")
+                widget.set_label(_("Confirm?"))
                 return
 
             treeview = None
@@ -600,18 +600,18 @@ class MintBackup:
 
             existing_paths = {row[2] for row in model}
             if entry not in existing_paths:
-                treeview.get_model().append([f"Wildcard: {entry_path}", self.dir_icon, entry_path])
+                treeview.get_model().append([f"{_("Wildcard")}: {entry_path}", self.dir_icon, entry_path])
 
             window = self.builder.get_object("wildcard_filter")
             self.wildcard_window_hide(window, entry, widget)
 
     def wildcard_window_show(self, widget, mode, window):
         if mode == "exclude":
-            self.builder.get_object("titlebar_wildcard").set_title("Exclude wildcard")
+            self.builder.get_object("titlebar_wildcard").set_title(_("Exclude wildcard"))
             self.builder.get_object("label_wildcard_exclude").show()
             self.builder.get_object("label_wildcard_include").hide()
         elif mode == "include":
-            self.builder.get_object("titlebar_wildcard").set_title("Include wildcard")
+            self.builder.get_object("titlebar_wildcard").set_title(("Include wildcard"))
             self.builder.get_object("label_wildcard_exclude").hide()
             self.builder.get_object("label_wildcard_include").show()
         else:
@@ -622,7 +622,7 @@ class MintBackup:
         window.hide()
         entry.set_text("")
         self.builder.get_object("treeview_wildcard").get_model().clear()
-        submit_button.set_label("Add wildcard")
+        submit_button.set_label(_("Add wildcard"))
 
     # FILE BACKUP FUNCTIONS
     #############################################################################################################################

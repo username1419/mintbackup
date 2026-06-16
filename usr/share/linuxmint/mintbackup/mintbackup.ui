@@ -1702,7 +1702,7 @@ Usage examples:
         <property name="margin">4</property>
         <child>
           <object class="GtkLabel">
-            <property name="label">The entered wildcard does not match any files. Click again to proceed.</property>
+            <property name="label" translatable="yes">The entered wildcard does not match any files. Click again to proceed.</property>
             <property name="visible">True</property>
           </object>
           <packing>
