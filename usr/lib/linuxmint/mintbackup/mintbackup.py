@@ -110,16 +110,16 @@ class MintBackup:
                 else:
                     self.excludes_model.append([item[len(self.home_directory) + 1:], self.file_icon, item])
 
-        wildcard_exclude_window = self.builder.get_object("wildcard_filter")
+        wildcard_window = self.builder.get_object("wildcard_filter")
         self.builder.get_object("button_add_file").connect("clicked", self.add_item_to_treeview, treeview, self.file_icon, Gtk.FileChooserAction.OPEN, False)
         self.builder.get_object("button_add_folder").connect("clicked", self.add_item_to_treeview, treeview, self.dir_icon, Gtk.FileChooserAction.SELECT_FOLDER, False)
-        self.builder.get_object("button_add_wildcard").connect("clicked", lambda _: wildcard_exclude_window.present())
+        self.builder.get_object("button_add_wildcard_exclude").connect("clicked", self.wildcard_window_show, "exclude", wildcard_window)
         self.builder.get_object("button_remove_exclude").connect("clicked", self.remove_item_from_treeview, treeview)
         self.builder.get_object("treeview_excludes_selection").connect("changed", self.on_treeview_excludes_selection_changed)
 
-        # set up exclusion wildcards window
+        # set up exclude wildcards window
         exclude_treeview = treeview
-        treeview = self.builder.get_object("treeview_wildcard_exclude")
+        treeview = self.builder.get_object("treeview_wildcard")
         renderer = Gtk.CellRendererPixbuf()
         column = Gtk.TreeViewColumn("", renderer)
         column.add_attribute(renderer, "pixbuf", 1)
@@ -133,12 +133,12 @@ class MintBackup:
         treeview.set_model(self.excludes_model)
 
         wildcard_submit_button = self.builder.get_object("button_wildcard_submit")
-        wildcard_entry = self.builder.get_object("exclude_wildcard_entry")
+        wildcard_entry = self.builder.get_object("wildcard_entry")
         wildcard_help_icon = self.iconTheme.load_icon("xsi-dialog-question-symbolic", 16, 0)
         wildcard_entry.set_icon_from_gicon(Gtk.EntryIconPosition.SECONDARY, wildcard_help_icon)
         wildcard_entry.connect("changed", self.try_add_wildcard_to_treeview, treeview, None, wildcard_submit_button, True)
         self.builder.get_object("button_wildcard_submit").connect("clicked", self.try_add_wildcard_to_treeview, exclude_treeview, wildcard_entry, None, False)
-        self.builder.get_object("button_wildcard_cancel").connect("clicked", lambda _: self.wildcard_window_hide(wildcard_exclude_window, wildcard_entry, treeview, wildcard_submit_button))
+        self.builder.get_object("button_wildcard_cancel").connect("clicked", lambda _: self.wildcard_window_hide(wildcard_window, wildcard_entry, treeview, wildcard_submit_button))
 
         # set up inclusions page
         treeview = self.builder.get_object("treeview_includes")
@@ -160,8 +160,10 @@ class MintBackup:
                     self.includes_model.append([item[len(self.home_directory) + 1:], self.dir_icon, item])
                 else:
                     self.includes_model.append([item[len(self.home_directory) + 1:], self.file_icon, item])
+
         self.builder.get_object("button_include_hidden_files").connect("clicked", self.add_item_to_treeview, treeview, self.file_icon, Gtk.FileChooserAction.OPEN, True)
         self.builder.get_object("button_include_hidden_dirs").connect("clicked", self.add_item_to_treeview, treeview, self.dir_icon, Gtk.FileChooserAction.SELECT_FOLDER, True)
+        self.builder.get_object("button_add_wildcard_include").connect("clicked", self.wildcard_window_show, "include", wildcard_window)
         self.builder.get_object("button_include_all_hidden").connect("clicked", self.add_all_hidden_to_treeview, treeview)
         self.builder.get_object("button_remove_include").connect("clicked", self.remove_item_from_treeview, treeview)
 
@@ -364,7 +366,7 @@ class MintBackup:
             self.excluded_files = []
             for row in self.excludes_model:
                 item = row[2]
-                if row[0] == "Wildcard":
+                if row[0].startswith("Wildcard"):
                     excluded_dirs, excluded_files = self.get_expanded_paths(item)
                     self.excluded_dirs.extend(excluded_dirs)
                     self.excluded_files.extend(excluded_files)
@@ -385,7 +387,7 @@ class MintBackup:
             self.included_files = []
             for row in self.includes_model:
                 item = row[2]
-                if row[0] == "Wildcard":
+                if row[0].startswith("Wildcard"):
                     included_dirs, included_files = self.get_expanded_paths(item)
                     self.included_dirs.extend(included_dirs)
                     self.included_files.extend(included_files)
@@ -496,7 +498,7 @@ class MintBackup:
         stored_files = []
         # completions = []
         depth = 0
-        # this loop builds the *preview* wildcard files upwards, selecting the next entries to scan from the previous iteration
+        # this loop builds the wildcard files upwards, selecting the next entries to scan from the previous iteration
         while depth < len(structure):
             stored_files = []
             parent_pattern = "/".join(structure[:depth])
@@ -508,7 +510,7 @@ class MintBackup:
                 # matches files in `path` with patterns of the same depth
                 filtered = fnmatch.filter(map(lambda entry: entry.name, entries), pattern)
                 # same as above, but matches all entries which starts with a matching sequence of the pattern
-                # filtered_completions = fnmatch.filter(map(lambda entry: entry.name, entries), pattern + "*")
+                # filtered_completions = fnmatch.filter(map(lambda entry: entry.name, entries), pattern + "*" if pattern[-1] != "*" else pattern + "/*")
 
                 # insert file/pattern prefixes
                 # completions = [parent_pattern + entry.name for entry in entries if entry.is_dir() and entry.name in filtered_completions]
@@ -586,19 +588,41 @@ class MintBackup:
                 widget.set_label("Confirm?")
                 return
 
+            treeview = None
+            if self.builder.get_object("label_wildcard_exclude").is_visible():
+                treeview = self.builder.get_object("treeview_excludes")
+            elif self.builder.get_object("label_wildcard_include").is_visible():
+                treeview = self.builder.get_object("treeview_includes")
+            else:
+                print("No mode selected", file=sys.stderr)
+                return
+
             model = treeview.get_model()
 
             existing_paths = {row[2] for row in model}
             if entry not in existing_paths:
-                treeview.get_model().append(["Wildcard", self.dir_icon, entry_path])
+                treeview.get_model().append([f"Wildcard: {entry_path}", self.dir_icon, entry_path])
 
             window = self.builder.get_object("wildcard_filter")
-            self.wildcard_window_hide(window, entry, self.builder.get_object("treeview_wildcard_exclude"), widget)
+            self.wildcard_window_hide(window, entry, widget)
 
-    def wildcard_window_hide(self, window, entry, treeview, submit_button):
+    def wildcard_window_show(self, widget, mode, window):
+        if mode == "exclude":
+            self.builder.get_object("titlebar_wildcard").set_title("Exclude wildcard")
+            self.builder.get_object("label_wildcard_exclude").show()
+            self.builder.get_object("label_wildcard_include").hide()
+        elif mode == "include":
+            self.builder.get_object("titlebar_wildcard").set_title("Include wildcard")
+            self.builder.get_object("label_wildcard_exclude").hide()
+            self.builder.get_object("label_wildcard_include").show()
+        else:
+            raise ValueError(f"Invalid mode: {mode}")
+        window.present()
+
+    def wildcard_window_hide(self, window, entry, submit_button):
         window.hide()
         entry.set_text("")
-        treeview.get_model().clear()
+        self.builder.get_object("treeview_wildcard").get_model().clear()
         submit_button.set_label("Add wildcard")
 
     # FILE BACKUP FUNCTIONS

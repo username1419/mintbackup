@@ -405,7 +405,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkButton" id="button_add_wildcard">
+                          <object class="GtkButton" id="button_add_wildcard_exclude">
                             <property name="label" translatable="yes">Exclude wildcard</property>
                             <property name="visible">True</property>
                             <property name="can-focus">True</property>
@@ -548,6 +548,19 @@
                           </packing>
                         </child>
                         <child>
+                          <object class="GtkButton" id="button_add_wildcard_include">
+                            <property name="label" translatable="yes">Include wildcard</property>
+                            <property name="visible">True</property>
+                            <property name="can-focus">True</property>
+                            <property name="receives-default">True</property>
+                          </object>
+                          <packing>
+                            <property name="expand">True</property>
+                            <property name="fill">True</property>
+                            <property name="position">2</property>
+                          </packing>
+                        </child>
+                        <child>
                           <object class="GtkButton" id="button_include_all_hidden">
                             <property name="label" translatable="yes">Include all</property>
                             <property name="visible">True</property>
@@ -557,7 +570,7 @@
                           <packing>
                             <property name="expand">False</property>
                             <property name="fill">False</property>
-                            <property name="position">2</property>
+                            <property name="position">3</property>
                           </packing>
                         </child>
                         <child>
@@ -1533,8 +1546,21 @@
         <property name="orientation">vertical</property>
         <property name="spacing">6</property>
         <child>
-          <object class="GtkLabel" id="label5">
-            <property name="visible">True</property>
+          <object class="GtkLabel" id="label_wildcard_include">
+            <property name="visible">False</property>
+            <property name="can-focus">False</property>
+            <property name="label" translatable="yes">Please add files or directories to the list below to include them in the backup.</property>
+            <property name="xalign">0</property>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="position">1</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkLabel" id="label_wildcard_exclude">
+            <property name="visible">False</property>
             <property name="can-focus">False</property>
             <property name="label" translatable="yes">Please add files or directories to the list below to exclude them from the backup.</property>
             <property name="xalign">0</property>
@@ -1558,7 +1584,7 @@
                 <property name="orientation">vertical</property>
                 <property name="expand">True</property>
                 <child>
-                  <object class="GtkEntry" id="exclude_wildcard_entry">
+                  <object class="GtkEntry" id="wildcard_entry">
                     <property name="visible">True</property>
                     <property name="can-focus">True</property>
                     <property name="truncate-multiline">True</property>
@@ -1583,7 +1609,7 @@ Usage examples:
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkScrolledWindow" id="scrolledwindow_wildcard_exclude">
+                  <object class="GtkScrolledWindow" id="scrolledwindow_wildcard">
                     <property name="visible">True</property>
                     <property name="can-focus">True</property>
                     <property name="shadow-type">out</property>
@@ -1593,7 +1619,7 @@ Usage examples:
                         <property name="can-focus">False</property>
                         <property name="resize-mode">queue</property>
                         <child>
-                          <object class="GtkTreeView" id="treeview_wildcard_exclude">
+                          <object class="GtkTreeView" id="treeview_wildcard">
                             <property name="visible">True</property>
                             <property name="can-focus">True</property>
                             <property name="headers-visible">False</property>
@@ -1658,7 +1684,7 @@ Usage examples:
       </object>
     </child>
     <child type="titlebar">
-      <object class="GtkHeaderBar">
+      <object class="GtkHeaderBar" id="titlebar_wildcard">
         <property name="visible">True</property>
         <property name="can-focus">False</property>
         <property name="title" translatable="yes">Exclude Filter</property>
