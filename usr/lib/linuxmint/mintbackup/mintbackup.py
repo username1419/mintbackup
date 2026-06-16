@@ -137,7 +137,7 @@ class MintBackup:
         wildcard_entry.set_icon_from_gicon(Gtk.EntryIconPosition.SECONDARY, wildcard_help_icon)
         wildcard_entry.connect("changed", self.try_add_wildcard_to_treeview, treeview, None, wildcard_submit_button, True)
         self.builder.get_object("button_wildcard_submit").connect("clicked", self.try_add_wildcard_to_treeview, None, wildcard_entry, None, False)
-        self.builder.get_object("button_wildcard_cancel").connect("clicked", lambda _: self.wildcard_window_hide(wildcard_window, wildcard_entry, treeview, wildcard_submit_button))
+        self.builder.get_object("button_wildcard_cancel").connect("clicked", lambda _: self.wildcard_window_hide(wildcard_window, wildcard_entry, wildcard_submit_button))
 
         # set up inclusions page
         treeview = self.builder.get_object("treeview_includes")
@@ -554,7 +554,7 @@ class MintBackup:
 
             is_confirm = submit_button.get_label() == "Confirm?"
             if is_confirm:
-                submit_button.set_label("Add wildcard")
+                submit_button.set_label("Use wildcard")
 
             # add paths to treeview
             model = treeview.get_model()
