@@ -1599,7 +1599,7 @@ Usage examples:
 - '[abc].jpg' matches files 'a.jpg', 'b.jpg', 'c.jpg'
 - '[a-z].png' matches files 'a.png', 'b.png', 'c.png', ..., 'z.png'
 - '[!cd].png' matches files like 'a.png', '1.png', but not  'c.png' or ' 'd.png''
-- '[abc]*.jpg' matches all files containing any number of characters 'a', 'b', and 'c' and ending with '.jpg', like 'acbabacbb.jpg'</property>
+- '[abc]*.jpg' matches all files starting with either 'a', 'b', and 'c' and ending with '.jpg', like 'apple.jpg'</property>
                     <property name="placeholder-text" translatable="yes">Enter a path wildcard (eg. Pictures/Important/*.png)</property>
                   </object>
                   <packing>
