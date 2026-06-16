@@ -622,7 +622,7 @@ class MintBackup:
         window.hide()
         entry.set_text("")
         self.builder.get_object("treeview_wildcard").get_model().clear()
-        submit_button.set_label(_("Add wildcard"))
+        submit_button.set_label(_("Use wildcard"))
 
     # FILE BACKUP FUNCTIONS
     #############################################################################################################################
