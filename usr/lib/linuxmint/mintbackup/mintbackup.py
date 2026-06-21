@@ -102,6 +102,7 @@ class MintBackup:
         self.excludes_model.append([BACKUP_DIR[len(self.home_directory) + 1:], self.dir_icon, BACKUP_DIR])
         excluded_paths.append(BACKUP_DIR)
         for item in self.settings.get_strv("excluded-paths"):
+            # BUG: gsettings init bug here
             item = os.path.expanduser(item)
             if os.path.exists(item) and item not in excluded_paths:
                 excluded_paths.append(item)
@@ -366,7 +367,7 @@ class MintBackup:
             for row in self.excludes_model:
                 item = row[2]
                 if row[0].startswith(_("Wildcard")):
-                    excluded_dirs, excluded_files = self.get_expanded_paths(item)
+                    wildcard, excluded_dirs, excluded_files = self.get_expanded_paths(item)
                     self.excluded_dirs.extend(excluded_dirs)
                     self.excluded_files.extend(excluded_files)
                 elif os.path.exists(item):
@@ -387,7 +388,7 @@ class MintBackup:
             for row in self.includes_model:
                 item = row[2]
                 if row[0].startswith("Wildcard"):
-                    included_dirs, included_files = self.get_expanded_paths(item)
+                    wildcard, included_dirs, included_files = self.get_expanded_paths(item)
                     self.included_dirs.extend(included_dirs)
                     self.included_files.extend(included_files)
                 elif os.path.exists(item):
@@ -478,20 +479,20 @@ class MintBackup:
                 self.builder.get_object("button_forward").hide()
             self.notebook.set_current_page(sel)
 
-    def get_expanded_paths(self, entry_path):
+    def get_expanded_paths(self, wildcard):
         home_dir = self.home_directory
         # remove home
-        if entry_path.startswith("~/"):
-            entry_path = entry_path[2:]
-        elif entry_path.startswith(home_dir):
-            entry_path = entry_path[len(home_dir) + 1:]
+        if wildcard.startswith("~/"):
+            wildcard = wildcard[2:]
+        elif wildcard.startswith(home_dir):
+            wildcard = wildcard[len(home_dir) + 1:]
 
         # validate user input
-        if not self.wildcard_is_valid(entry_path):
+        if not self.wildcard_is_valid(wildcard):
             return None
 
         # match wildcards
-        structure = entry_path.split("/")
+        structure = wildcard.split("/")
         scan_directories = [home_dir]
         stored_directories = []
         stored_files = []
@@ -522,7 +523,9 @@ class MintBackup:
 
         # i tried i cant add autocompletion
         # if anyone wants to attempt this, code to generate completions is commented out above
-        return scan_directories, stored_files
+        wildcard = os.path.join(self.home_directory, wildcard)
+
+        return wildcard, scan_directories, stored_files
 
     def wildcard_is_valid(self, path):
         home_dir = self.home_directory
@@ -550,7 +553,7 @@ class MintBackup:
                 widget.get_style_context().add_class("error")
                 return
             widget.get_style_context().remove_class("error")
-            directories, files = paths
+            wildcard, directories, files = paths
 
             is_confirm = submit_button.get_label() == _("Confirm?")
             if is_confirm:
@@ -578,7 +581,7 @@ class MintBackup:
                 widget.get_style_context().add_class("error")
                 return
             widget.get_style_context().remove_class("error")
-            directories, files = paths
+            wildcard, directories, files = paths
             
             is_confirm = widget.get_label() == _("Confirm?")
             if len(directories + files) == 0 and not is_confirm:
@@ -600,7 +603,7 @@ class MintBackup:
 
             existing_paths = {row[2] for row in model}
             if entry not in existing_paths:
-                treeview.get_model().append([f"{_("Wildcard")}: {entry_path}", self.dir_icon, entry_path])
+                treeview.get_model().append([f"{_("Wildcard")}: {entry_path}", self.dir_icon, wildcard])
 
             window = self.builder.get_object("wildcard_filter")
             self.wildcard_window_hide(window, entry, widget)
