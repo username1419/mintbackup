@@ -547,6 +547,7 @@ class MintBackup:
 
     def try_add_wildcard_to_treeview(self, widget, treeview, entry, submit_button, expanded):
         if expanded:
+            home_dir = self.home_directory
             entry_path = widget.get_text()
             paths = self.get_expanded_paths(entry_path)
             if paths is None:
@@ -564,11 +565,11 @@ class MintBackup:
 
             new_items = []
             for full_path in directories:
-                _unused, item = os.path.split(full_path)
+                item = full_path[len(home_dir) + 1:]
                 new_items.append([item, self.dir_icon, full_path])
 
             for full_path in files:
-                _unused, item = os.path.split(full_path)
+                item = full_path[len(home_dir) + 1:]
                 new_items.append([item, self.file_icon, full_path])
 
             model.clear()
