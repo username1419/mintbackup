@@ -4,7 +4,6 @@ import gettext
 import hashlib
 import locale
 import os
-import pprint
 import stat
 import sys
 import tarfile
