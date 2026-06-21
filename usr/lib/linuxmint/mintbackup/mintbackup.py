@@ -4,6 +4,7 @@ import gettext
 import hashlib
 import locale
 import os
+import pprint
 import stat
 import sys
 import tarfile
@@ -597,7 +598,7 @@ class MintBackup:
         else:
             entry_path = entry.get_text()
             paths = self.get_expanded_paths(entry_path)
-            if paths is None:
+            if paths is None or entry_path == "":
                 widget.get_style_context().add_class("error")
                 return
             widget.get_style_context().remove_class("error")
