@@ -102,9 +102,14 @@ class MintBackup:
         self.excludes_model.append([BACKUP_DIR[len(self.home_directory) + 1:], self.dir_icon, BACKUP_DIR])
         excluded_paths.append(BACKUP_DIR)
         for item in self.settings.get_strv("excluded-paths"):
-            # BUG: gsettings init bug here
+            is_wildcard = item.startswith("wc:")
+            if is_wildcard:
+                item = item[3:]
+                item = os.path.expanduser(item)
+                self.excludes_model.append([f"{_("Wildcard")}: {item[len(self.home_directory) + 1:]}", self.dir_icon, item])
+                continue
             item = os.path.expanduser(item)
-            if os.path.exists(item) and item not in excluded_paths:
+            if os.path.exists(item) and item not in excluded_paths and not is_wildcard:
                 excluded_paths.append(item)
                 if os.path.isdir(item):
                     self.excludes_model.append([item[len(self.home_directory) + 1:], self.dir_icon, item])
@@ -154,9 +159,15 @@ class MintBackup:
         self.includes_model.set_sort_column_id(0, Gtk.SortType.ASCENDING)
         treeview.set_model(self.includes_model)
         for item in self.settings.get_strv("included-hidden-paths"):
-            item = os.path.expanduser(item)
-            if os.path.exists(item):
-                if os.path.isdir(item):
+            is_wildcard = item.startswith("wc:")
+            if is_wildcard:
+                item = item[3:]
+                item = os.path.expanduser(item)
+                self.includes_model.append([f"{_("Wildcard")}: {item[len(self.home_directory) + 1:]}", self.dir_icon, item])
+                continue
+            os.path.expanduser(item)
+            if os.path.exists(item) or is_wildcard:
+                if os.path.isdir(item) or is_wildcard:
                     self.includes_model.append([item[len(self.home_directory) + 1:], self.dir_icon, item])
                 else:
                     self.includes_model.append([item[len(self.home_directory) + 1:], self.file_icon, item])
@@ -380,7 +391,11 @@ class MintBackup:
             for row in self.excludes_model:
                 path = row[2]
                 path = path.replace(self.home_directory, "~")
-                excludes.append(path)
+                if row[0].startswith(_("Wildcard")):
+                    # insert prefix to separate from normal paths during gsettings load
+                    excludes.append("wc:" + path)
+                else:
+                    excludes.append(path)
             self.settings.set_strv("excluded-paths", excludes)
             # Calculate includes
             self.included_dirs = []
@@ -401,7 +416,11 @@ class MintBackup:
             for row in self.includes_model:
                 path = row[2]
                 path = path.replace(self.home_directory, "~")
-                includes.append(path)
+                if row[0].startswith(_("Wildcard")):
+                    # insert prefix to separate from normal paths during gsettings load
+                    includes.append("wc:" + path)
+                else:
+                    includes.append(path)
             self.settings.set_strv("included-hidden-paths", includes)
             thread = threading.Thread(target=self.backup)
             thread.daemon = True
